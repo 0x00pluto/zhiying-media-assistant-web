@@ -1,0 +1,105 @@
+{
+  "organization": {
+    "legalName": "北京互远未来科技有限公司",
+    "brandName": "互远AI",
+    "nameEn": "待补充",
+    "@type": "Corporation",
+    "foundingDate": "待补充",
+    "address": {
+      "streetAddress": "待补充",
+      "addressLocality": "待补充",
+      "addressRegion": "待补充",
+      "postalCode": "待补充",
+      "addressCountry": "CN"
+    },
+    "url": "待补充",
+    "logo": "https://smzs.t.xds365.com/brand/icon-1024.png",
+    "description": "待补充",
+    "keyMetrics": [
+      {
+        "label": "素材精准无水印率",
+        "value": "99.9%",
+        "source": "产品官网公开展示"
+      },
+      {
+        "label": "单博主数据极速爬取",
+        "value": "< 3 秒",
+        "source": "产品官网公开展示"
+      },
+      {
+        "label": "飞书官方免审自建对接",
+        "value": "0 成本配置",
+        "source": "产品官网公开展示"
+      },
+      {
+        "label": "本地处理，隐私零外传",
+        "value": "100%",
+        "source": "产品官网公开展示"
+      }
+    ]
+  },
+  "authority": {
+    "certifications": [],
+    "licenses": [],
+    "awards": [],
+    "mediaCoverage": [],
+    "academicImpact": "待补充"
+  },
+  "offerings": [
+    {
+      "name": "智赢媒体助手",
+      "description": "Chrome 浏览器扩展，支持小红书公开数据一键采集、CSV 导出与飞书多维表格无缝同步。",
+      "keywords": [
+        "小红书采集",
+        "飞书多维表格",
+        "Chrome 扩展",
+        "数据采集",
+        "自媒体运营"
+      ],
+      "url": "https://smzs.t.xds365.com"
+    }
+  ],
+  "keyPeople": [],
+  "webPresence": {
+    "socialMedia": [],
+    "encyclopedia": [],
+    "industryPlatforms": [
+      {
+        "platform": "Chrome Web Store",
+        "url": "https://chromewebstore.google.com/detail/iobjekoppljaiophplhgmagmjfgaaoed"
+      }
+    ],
+    "sameAs": [
+      "https://chromewebstore.google.com/detail/iobjekoppljaiophplhgmagmjfgaaoed"
+    ]
+  },
+  "faq": [
+    {
+      "question": "打开小红书网页版后，侧边栏没有出现采集按钮？",
+      "answer": "请确认已打开小红书网页版并且刷新页面。如果是首次安装，需要确保浏览器已经授权了该插件在所有网站上的读取权限，避免部分 SPA（单页面应用）前端框架深度跳转后页面无法侦测加载。"
+    },
+    {
+      "question": "配置飞书同步总是失败，有什么排查路径？",
+      "answer": "请按照以下三步排查：1. 检查是否在飞书开放平台为该自建应用开通了「多维表格」读写权限，以及相应的「通讯录」等辅助查询功能；2. 确认你填写的 App ID 和 App Secret 正确，且应用已在飞书后台正式「发布版本」上线；3. 如果表格配置无误，可以在控制台 chrome://extensions 点击 Service Worker 的 Inspect 查看后台的具体返回，定位字段映射问题。"
+    },
+    {
+      "question": "批量采集时会不会触发平台风控（例如 300011 错误）？",
+      "answer": "当短时间内请求详情接口过于频繁时，平台有几率会下发验证码。智赢助手已经内置了「模拟真人浏览行为延迟间隔设置」。如果发现高频被截流，请在齿轮「设置」 -> 「采集设置」中调慢请求速率，单次提取尽量控制在 50 条以下。"
+    },
+    {
+      "question": "部分视频的下载链接为什么会显示为空？",
+      "answer": "在详情页中素材抓取率是最完美的。但在小红书某些列表页批量拉取时，列表接口本身的 API 并未下发完整无水印视频流数据。若检测到视频空链接，请点击打开该笔记详情重新加载，或者检查 URL 是否包含防盗刷的 xsec_token 校验标记。"
+    }
+  ],
+  "brandGuidelines": {
+    "competitors": [],
+    "negativeKeywords": [],
+    "notes": "产品品牌为「智赢媒体助手」，企业主体为「互远AI / 北京互远未来科技有限公司」。"
+  },
+  "productSite": {
+    "url": "https://smzs.t.xds365.com",
+    "name": "智赢媒体助手",
+    "version": "v0.3.2",
+    "supportEmail": "support@xds365.com"
+  }
+}
