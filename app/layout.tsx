@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { Geist_Mono, Inter, Noto_Sans_SC } from "next/font/google";
 
 import { ThemeProvider } from "@/components/providers/theme-provider";
-import { HomeJsonLd } from "@/components/seo/json-ld";
 import { ORG_CONFIG, SITE_CONFIG } from "@/lib/site-config";
 import { cn } from "@/lib/utils";
 
@@ -26,33 +25,11 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   metadataBase: new URL(ORG_CONFIG.siteOrigin),
-  title: SITE_CONFIG.title,
+  title: {
+    default: SITE_CONFIG.title,
+    template: `%s | ${SITE_CONFIG.name}`,
+  },
   description: SITE_CONFIG.description,
-  alternates: {
-    canonical: "/",
-  },
-  openGraph: {
-    type: "website",
-    locale: "zh_CN",
-    url: "/",
-    siteName: SITE_CONFIG.name,
-    title: SITE_CONFIG.title,
-    description: SITE_CONFIG.description,
-    images: [
-      {
-        url: "/brand/icon-1024.png",
-        width: 1024,
-        height: 1024,
-        alt: SITE_CONFIG.name,
-      },
-    ],
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: SITE_CONFIG.title,
-    description: SITE_CONFIG.description,
-    images: ["/brand/icon-1024.png"],
-  },
   robots: {
     index: true,
     follow: true,
@@ -86,7 +63,6 @@ export default function RootLayout({
         className="min-h-full flex flex-col"
         suppressHydrationWarning
       >
-        <HomeJsonLd />
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           {children}
         </ThemeProvider>

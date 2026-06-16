@@ -8,7 +8,7 @@ import {
 import type { LucideIcon } from "lucide-react";
 
 import { Card, CardContent } from "@/components/ui/card";
-import { FEATURES } from "@/lib/site-config";
+import { FEATURES } from "@/app/(marketing)/_config/marketing-content";
 
 const ICON_MAP: Record<(typeof FEATURES)[number]["icon"], LucideIcon> = {
   archive: Archive,

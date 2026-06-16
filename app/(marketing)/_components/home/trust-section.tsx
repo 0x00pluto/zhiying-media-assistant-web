@@ -1,7 +1,7 @@
 import { Pencil, Shield, SlidersHorizontal } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
-import { TRUST_ITEMS } from "@/lib/site-config";
+import { TRUST_ITEMS } from "@/app/(marketing)/_config/marketing-content";
 
 const ICON_MAP: Record<(typeof TRUST_ITEMS)[number]["icon"], LucideIcon> = {
   shield: Shield,

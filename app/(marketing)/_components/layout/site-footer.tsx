@@ -1,7 +1,8 @@
 import Link from "next/link";
 
 import { BrandLogo } from "@/components/brand/brand-logo";
-import { FOOTER_LINKS, ORG_CONFIG, SITE_CONFIG } from "@/lib/site-config";
+import { FOOTER_LINKS } from "@/app/(marketing)/_config/marketing-content";
+import { ORG_CONFIG, SITE_CONFIG } from "@/lib/site-config";
 
 export function SiteFooter() {
   return (
@@ -27,12 +28,12 @@ export function SiteFooter() {
             <ul className="space-y-2.5 text-muted-foreground">
               {FOOTER_LINKS.product.map((link) => (
                 <li key={link.label}>
-                  <a
+                  <Link
                     href={link.href}
                     className="transition-colors hover:text-primary"
                   >
                     {link.label}
-                  </a>
+                  </Link>
                 </li>
               ))}
             </ul>

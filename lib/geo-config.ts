@@ -2,10 +2,9 @@ import enterpriseBase from "@/content/geo/enterprise-base.json";
 import {
   FAQ_ITEMS,
   HOW_IT_WORKS_STEPS,
-  ORG_CONFIG,
   PRICING_PLANS,
-  SITE_CONFIG,
-} from "@/lib/site-config";
+} from "@/app/(marketing)/_config/marketing-content";
+import { ORG_CONFIG, SITE_CONFIG } from "@/lib/site-config";
 
 export const SITE_ORIGIN = ORG_CONFIG.siteOrigin;
 

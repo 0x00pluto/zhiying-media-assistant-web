@@ -1,4 +1,4 @@
-import { STATS } from "@/lib/site-config";
+import { STATS } from "@/app/(marketing)/_config/marketing-content";
 
 export function StatsBar() {
   return (

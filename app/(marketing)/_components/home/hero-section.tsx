@@ -1,9 +1,10 @@
 import { Download } from "lucide-react";
 
-import { HeroDemoSimulator } from "@/components/home/hero-demo-simulator";
+import { HeroDemoSimulator } from "@/app/(marketing)/_components/home/hero-demo-simulator";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { PLATFORMS, SITE_CONFIG } from "@/lib/site-config";
+import { PLATFORMS } from "@/app/(marketing)/_config/marketing-content";
+import { SITE_CONFIG } from "@/lib/site-config";
 import { cn } from "@/lib/utils";
 
 export function HeroSection() {

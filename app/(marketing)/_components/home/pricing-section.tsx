@@ -4,7 +4,8 @@ import { Check, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { PRICING_PLANS, SITE_CONFIG } from "@/lib/site-config";
+import { PRICING_PLANS } from "@/app/(marketing)/_config/marketing-content";
+import { SITE_CONFIG } from "@/lib/site-config";
 import { cn } from "@/lib/utils";
 
 export function PricingSection() {

@@ -1,5 +1,5 @@
 import { Card, CardContent } from "@/components/ui/card";
-import { HOW_IT_WORKS_STEPS } from "@/lib/site-config";
+import { HOW_IT_WORKS_STEPS } from "@/app/(marketing)/_config/marketing-content";
 
 export function HowItWorksSection() {
   return (

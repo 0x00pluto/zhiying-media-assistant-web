@@ -14,7 +14,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { FEISHU_FEATURES } from "@/lib/site-config";
+import { FEISHU_FEATURES } from "@/app/(marketing)/_config/marketing-content";
 import { cn } from "@/lib/utils";
 
 type SyncStatus = "waiting" | "syncing" | "done";
