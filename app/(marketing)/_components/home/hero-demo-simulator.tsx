@@ -162,7 +162,7 @@ export function HeroDemoSimulator() {
     <div className="relative h-full w-full">
       <div className="absolute inset-0 rounded-2xl border border-border/40 bg-gradient-to-tr from-emerald-500/5 to-teal-500/5 dark:from-emerald-500/10 dark:to-teal-500/10" />
 
-      <Card className="relative flex h-full w-full flex-col overflow-hidden rounded-2xl py-0 shadow-2xl ring-border">
+      <Card className="relative flex h-full w-full flex-col gap-0 overflow-hidden rounded-2xl py-0 shadow-2xl ring-border">
         <div className="flex h-10 shrink-0 items-center justify-between border-b bg-muted px-4 select-none">
           <div className="flex items-center space-x-1.5">
             <span className="size-3 rounded-full bg-red-400/80" />
