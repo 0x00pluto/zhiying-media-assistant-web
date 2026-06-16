@@ -21,7 +21,11 @@ export default function PrivacyPage() {
   return (
     <LegalDocument
       title={privacyContent.title}
+      effectiveDate={privacyContent.effectiveDate}
       lastUpdated={privacyContent.lastUpdated}
+      applicableProduct={privacyContent.applicableProduct}
+      intro={privacyContent.intro}
+      footerNote={privacyContent.footerNote}
       sections={privacyContent.sections}
     />
   );
