@@ -6,7 +6,11 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "db:migration:new": "node scripts/db-migration-new.mjs",
+    "db:migration:list": "supabase migration list",
+    "db:migration:sync-remote": "node scripts/db-migration-sync-remote.mjs",
+    "db:migrate": "supabase db push"
   },
   "dependencies": {
     "class-variance-authority": "^0.7.1",

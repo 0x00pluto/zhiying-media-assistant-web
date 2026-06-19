@@ -76,5 +76,12 @@ tmp/
 temp/
 *.tmp
 
+# supabase migration sync backup
+.migration-sync-backup/
+
+# supabase local CLI state
+supabase/.branches
+supabase/.temp
+
 /features/
 .cursor/

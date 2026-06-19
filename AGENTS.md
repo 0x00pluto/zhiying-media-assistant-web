@@ -28,6 +28,15 @@ pnpm start    # 启动生产服务
 pnpm lint     # ESLint 检查
 ```
 
+数据库迁移（需本机安装 [Supabase CLI](https://supabase.com/docs/guides/cli) 并完成 `supabase link`）：
+
+```bash
+pnpm run db:migration:new -- <name>   # 新建迁移文件（UTC 时间戳前缀）
+pnpm db:migration:list                # 查看本地/远端迁移对齐
+pnpm db:migration:sync-remote         # 仅补齐远端独有迁移（branch merge）
+pnpm db:migrate                       # 推送到当前 link 的远端（= supabase db push）
+```
+
 新增 shadcn 组件：`npx shadcn@latest add <component>`（遵循 `components.json` 别名）。
 
 ## 目录结构
@@ -66,6 +75,14 @@ lib/
 
 content/geo/
 └── enterprise-base.json    # GEO 企业实体数据（JSON-LD 来源）
+
+supabase/
+├── config.toml             # Supabase CLI 配置
+└── migrations/             # 数据库 DDL 单一事实源（版本化 .sql）
+
+scripts/
+├── db-migration-new.mjs    # 创建空迁移（UTC 时间戳）
+└── db-migration-sync-remote.mjs  # 安全同步远端独有迁移
 
 specs/
 ├── prds/                   # PRD 文档（/team:product-manager 落盘）
@@ -112,7 +129,18 @@ public/
 3. **中文优先**：`lang="zh-CN"`，文案与 metadata 使用简体中文；字体为 Inter + Noto Sans SC。
 4. **图片**：品牌资源放 `public/brand/`，组件内用 `next/image`。
 5. **法律页**：共用 `LegalDocument`，各页 `_content.ts` 导出 `sections` 结构。
-6. **变更范围**：保持 diff 最小；不引入与官网无关的后端 API、数据库或认证逻辑（当前为静态营销站）。
+6. **变更范围**：保持 diff 最小；应用层当前仍为静态营销站。数据库结构变更须经 `supabase/migrations/` 管理；暂不接入 Supabase 客户端 SDK，连库与业务 API 在后续 PR 落地。
+
+## Supabase / 数据库迁移
+
+- **单一事实源**：所有 DDL（建表、改表、索引、RLS policy 等）只进 `supabase/migrations/`；禁止在生产 Dashboard 手工改表且不落库。
+- **日常流程**：`db:migration:new` → 编写 SQL → 在开发库验证 → `db:migrate` → 提交 Git。
+- **推送前确认**：`db:migrate` 等价于 `supabase db push`，会应用到**当前 `supabase link` 的项目**；执行前确认 project ref 指向目标环境（开发/生产）。
+- **远端对齐**：若出现 `Remote migration versions not found in local migrations directory`，使用 `pnpm db:migration:sync-remote`；**不要**裸跑 `supabase migration fetch --linked --yes`（会批量改写已入库迁移文件）。
+- **不可变历史**：已合并、已上线的 migration 文件不可改写；修复与纠偏用**新 migration** 前滚。
+- **环境变量**：模板见 [`.env.example`](.env.example)（`SUPABASE_URL`、`SUPABASE_PUBLISHABLE_KEY`、`SUPABASE_SECRET_KEY`、`SUPABASE_JWKS_URL`）。本地：`cp .env.example .env.local` 后从 Dashboard → API 填入；Vercel 已连 Supabase 时可 `vercel env pull .env.local`。
+- **密钥**：`SUPABASE_SECRET_KEY` 仅服务端使用，不得加 `NEXT_PUBLIC_` 前缀；migration 文件中禁止写密钥。
+- **前置**：本机安装 Supabase CLI → `supabase login` → `supabase link --project-ref <ref>`。
 
 ## SEO / GEO
 
