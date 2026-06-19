@@ -4,6 +4,7 @@ import { Download, Menu } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 
+import { AuthStatus } from "@/app/(marketing)/_components/layout/auth-status";
 import { BrandLogo } from "@/components/brand/brand-logo";
 import { ThemeToggle } from "@/app/(marketing)/_components/layout/theme-toggle";
 import { Button } from "@/components/ui/button";
@@ -44,6 +45,7 @@ export function SiteHeader() {
 
         <div className="flex items-center space-x-4">
           <ThemeToggle />
+          <AuthStatus />
 
           <Button asChild className="hidden sm:inline-flex" size="sm">
             <Link href="/#install">
@@ -74,6 +76,10 @@ export function SiteHeader() {
                     {link.label}
                   </Link>
                 ))}
+                <AuthStatus
+                  variant="mobile"
+                  onNavigate={() => setOpen(false)}
+                />
                 <Button asChild className="mt-2">
                   <Link href="/#install" onClick={() => setOpen(false)}>
                     安装扩展

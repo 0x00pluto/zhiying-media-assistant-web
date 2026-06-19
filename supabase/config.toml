@@ -256,7 +256,7 @@ otp_expiry = 3600
 
 [auth.sms]
 # Allow/disallow new user signups via SMS to your project.
-enable_signup = false
+enable_signup = true
 # If enabled, users need to confirm their phone number before signing in.
 enable_confirmations = false
 # Template for sending OTP to users
@@ -264,9 +264,15 @@ template = "Your code is {{ .Code }}"
 # Controls the minimum amount of time that must pass before sending another sms otp.
 max_frequency = "5s"
 
-# Use pre-defined map of phone number to OTP for testing.
+# 本地无公网时可用固定 OTP 联调（号码不含 +86 前缀）：
 # [auth.sms.test_otp]
-# 4152127777 = "123456"
+# 13800138000 = "123456"
+
+# 本地 Send SMS Hook 指向 Next.js dev（需 ngrok 等公网隧道，或改用 test_otp）：
+# [auth.hook.send_sms]
+# enabled = true
+# uri = "http://host.docker.internal:3000/api/hooks/supabase/send-sms"
+# secrets = "env(SEND_SMS_HOOK_SECRET)"
 
 # Configure logged in session timeouts.
 # [auth.sessions]
