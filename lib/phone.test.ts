@@ -26,5 +26,6 @@ describe("phone utils", () => {
   it("masks phone for display", () => {
     expect(maskChinaMobile("13812345678")).toBe("138****5678");
     expect(maskChinaMobile("+8613812345678")).toBe("138****5678");
+    expect(maskChinaMobile("8615810019819")).toBe("158****9819");
   });
 });

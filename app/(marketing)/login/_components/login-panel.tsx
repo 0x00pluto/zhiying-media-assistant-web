@@ -1,5 +1,6 @@
 "use client";
 
+import { ChevronLeft } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
@@ -17,12 +18,18 @@ import { Input } from "@/components/ui/input";
 import {
   InputOTP,
   InputOTPGroup,
+  InputOTPSeparator,
   InputOTPSlot,
 } from "@/components/ui/input-otp";
 import { Label } from "@/components/ui/label";
 import { COOLDOWN_SECONDS } from "@/lib/auth/constants";
 import { sanitizeNext } from "@/lib/auth/sanitize-next";
 import { isValidChinaMobile, maskChinaMobile } from "@/lib/phone";
+
+const OTP_VALID_MINUTES_DISPLAY = 10;
+
+const OTP_SLOT_CLASSNAME =
+  "relative flex size-11 items-center justify-center rounded-md border border-input text-base shadow-xs outline-none first:rounded-md first:border-l last:rounded-md aria-invalid:border-destructive data-[active=true]:border-ring data-[active=true]:ring-3 data-[active=true]:ring-ring/50 dark:bg-input/30";
 
 type LoginStep = "phone" | "otp";
 
@@ -52,6 +59,9 @@ export function LoginPanel({ next }: LoginPanelProps) {
   const phoneValid = isValidChinaMobile(phone);
   const canSend = phoneValid && agreed && !loading && cooldown === 0;
   const canVerify = otp.length === 6 && !loading;
+  const maskedPhoneE164 = phoneValid
+    ? `+86${maskChinaMobile(phone)}`
+    : "";
 
   useEffect(() => {
     if (cooldown <= 0) {
@@ -72,36 +82,43 @@ export function LoginPanel({ next }: LoginPanelProps) {
     }
   }, []);
 
-  const sendOtp = useCallback(async () => {
-    if (!canSend) {
-      return;
-    }
+  const sendOtp = useCallback(
+    async (fromOtpStep = false) => {
+      const allowed = fromOtpStep
+        ? phoneValid && !loading && cooldown === 0
+        : canSend;
 
-    setLoading(true);
-    setError(null);
-
-    try {
-      const response = await fetch("/api/web/auth/sign-in/phone", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone }),
-      });
-      const body = (await response.json()) as ApiErrorBody & { ok?: boolean };
-
-      if (!response.ok) {
-        handleApiError(body, "发送验证码失败，请稍后重试");
+      if (!allowed) {
         return;
       }
 
-      setStep("otp");
-      setOtp("");
-      setCooldown(COOLDOWN_SECONDS);
-    } catch {
-      setError("网络异常，请稍后重试");
-    } finally {
-      setLoading(false);
-    }
-  }, [canSend, handleApiError, phone]);
+      setLoading(true);
+      setError(null);
+
+      try {
+        const response = await fetch("/api/web/auth/sign-in/phone", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ phone }),
+        });
+        const body = (await response.json()) as ApiErrorBody & { ok?: boolean };
+
+        if (!response.ok) {
+          handleApiError(body, "发送验证码失败，请稍后重试");
+          return;
+        }
+
+        setStep("otp");
+        setOtp("");
+        setCooldown(COOLDOWN_SECONDS);
+      } catch {
+        setError("网络异常，请稍后重试");
+      } finally {
+        setLoading(false);
+      }
+    },
+    [canSend, cooldown, handleApiError, loading, phone, phoneValid],
+  );
 
   const verifyOtp = useCallback(async () => {
     if (!canVerify) {
@@ -142,13 +159,15 @@ export function LoginPanel({ next }: LoginPanelProps) {
   return (
     <div className="container mx-auto flex min-h-[calc(100vh-8rem)] items-center justify-center px-4 py-12">
       <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle>登录 / 注册</CardTitle>
-          <CardDescription>
-            使用中国大陆手机号接收验证码，首次验证成功即完成注册。
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
+        {step === "phone" ? (
+          <CardHeader>
+            <CardTitle>登录 / 注册</CardTitle>
+            <CardDescription>
+              使用中国大陆手机号接收验证码，首次验证成功即完成注册。
+            </CardDescription>
+          </CardHeader>
+        ) : null}
+        <CardContent className={step === "otp" ? "space-y-6 pt-6" : "space-y-6"}>
           {step === "phone" ? (
             <div className="space-y-4">
               <div className="space-y-2">
@@ -210,40 +229,80 @@ export function LoginPanel({ next }: LoginPanelProps) {
               <Button
                 className="w-full"
                 disabled={!canSend}
-                onClick={sendOtp}
+                onClick={() => sendOtp()}
               >
                 {loading ? "发送中..." : "发送验证码"}
               </Button>
             </div>
           ) : (
-            <div className="space-y-4">
-              <div className="space-y-1 text-sm text-muted-foreground">
-                <p>验证码已发送至 +86 {maskChinaMobile(phone)}</p>
-                <button
-                  type="button"
-                  className="text-primary underline-offset-4 hover:underline"
-                  onClick={backToPhone}
-                >
-                  修改号码
-                </button>
-              </div>
+            <div className="space-y-6">
+              <button
+                type="button"
+                className="inline-flex items-center gap-0.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
+                onClick={backToPhone}
+              >
+                <ChevronLeft className="size-4" />
+                返回
+              </button>
 
               <div className="space-y-2">
-                <Label htmlFor="otp">短信验证码</Label>
-                <InputOTP
-                  id="otp"
-                  maxLength={6}
-                  value={otp}
-                  onChange={setOtp}
-                  inputMode="numeric"
-                  pattern="[0-9]*"
-                >
-                  <InputOTPGroup>
-                    {Array.from({ length: 6 }).map((_, index) => (
-                      <InputOTPSlot key={index} index={index} />
-                    ))}
-                  </InputOTPGroup>
-                </InputOTP>
+                <h2 className="text-xl font-semibold tracking-tight">
+                  输入手机号验证码
+                </h2>
+                <p className="text-sm leading-relaxed text-muted-foreground">
+                  请输入发送至{" "}
+                  <span className="font-medium text-foreground">
+                    {maskedPhoneE164}
+                  </span>{" "}
+                  的 6 位验证码，有效期 {OTP_VALID_MINUTES_DISPLAY} 分钟
+                </p>
+              </div>
+
+              <InputOTP
+                id="otp"
+                maxLength={6}
+                value={otp}
+                onChange={setOtp}
+                inputMode="numeric"
+                pattern="[0-9]*"
+                containerClassName="justify-center gap-3"
+              >
+                <InputOTPGroup className="gap-2">
+                  {[0, 1, 2].map((index) => (
+                    <InputOTPSlot
+                      key={index}
+                      index={index}
+                      className={OTP_SLOT_CLASSNAME}
+                    />
+                  ))}
+                </InputOTPGroup>
+                <InputOTPSeparator />
+                <InputOTPGroup className="gap-2">
+                  {[3, 4, 5].map((index) => (
+                    <InputOTPSlot
+                      key={index}
+                      index={index}
+                      className={OTP_SLOT_CLASSNAME}
+                    />
+                  ))}
+                </InputOTPGroup>
+              </InputOTP>
+
+              <div className="text-sm">
+                {cooldown > 0 ? (
+                  <p className="text-muted-foreground">
+                    {cooldown} 秒后可重新获取验证码
+                  </p>
+                ) : (
+                  <button
+                    type="button"
+                    className="text-primary transition-colors hover:text-primary/80 disabled:pointer-events-none disabled:opacity-50"
+                    disabled={loading}
+                    onClick={() => sendOtp(true)}
+                  >
+                    {loading ? "发送中..." : "重新获取验证码"}
+                  </button>
+                )}
               </div>
 
               {error ? (
@@ -257,28 +316,8 @@ export function LoginPanel({ next }: LoginPanelProps) {
                 disabled={!canVerify}
                 onClick={verifyOtp}
               >
-                {loading ? "登录中..." : "登录"}
+                {loading ? "验证中..." : "下一步"}
               </Button>
-
-              <div className="flex items-center justify-between gap-2">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={backToPhone}
-                >
-                  返回改号
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  disabled={cooldown > 0 || loading}
-                  onClick={sendOtp}
-                >
-                  {cooldown > 0 ? `重新发送 (${cooldown}s)` : "重新发送"}
-                </Button>
-              </div>
             </div>
           )}
         </CardContent>
