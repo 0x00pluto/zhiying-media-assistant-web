@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 
@@ -25,24 +25,27 @@ export function AuthStatus({
   const [me, setMe] = useState<MeResponse>({ loggedIn: false });
   const [loggingOut, setLoggingOut] = useState(false);
 
-  const loadMe = useCallback(async () => {
-    try {
-      const response = await fetch("/api/web/auth/me", {
-        credentials: "include",
-      });
-      const body = (await response.json()) as MeResponse;
-      setMe(body);
-    } catch {
-      setMe({ loggedIn: false });
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
   useEffect(() => {
-    setLoading(true);
-    void loadMe();
-  }, [loadMe, pathname]);
+    let cancelled = false;
+
+    void (async () => {
+      try {
+        const response = await fetch("/api/web/auth/me", {
+          credentials: "include",
+        });
+        const body = (await response.json()) as MeResponse;
+        if (!cancelled) setMe(body);
+      } catch {
+        if (!cancelled) setMe({ loggedIn: false });
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [pathname]);
 
   const handleLogout = async () => {
     setLoggingOut(true);

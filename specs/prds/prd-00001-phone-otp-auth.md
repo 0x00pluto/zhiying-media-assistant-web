@@ -2,15 +2,19 @@
 name: prd-00001-phone-otp-auth
 sequence: 1
 description: 官网前后端分离的手机号 OTP 注册/登录（Web BFF + Supabase Auth + 阿里云 Send SMS Hook）
-status: backlog
+status: partial
 created: 2026-06-19T10:18:50Z
+last_accepted_at: 2026-06-19T13:51:50Z
+accepted_commit: 61896fe
+accepted_branch: main
+accepted_scope: all
 ---
 
 # PRD：官网手机号 OTP 注册/登录（前后端分离）
 
 | 属性 | 说明 |
 |------|------|
-| **状态** | `backlog` |
+| **状态** | 工程：`partial`（详见文末 [工程验收状态](#12-工程验收状态)） |
 | **范围** | 智赢媒体助手**官网** Web 客户端 + Web BFF API：手机号 OTP 注册/登录、HttpOnly 会话、Send SMS Hook（阿里云）；**不含** Chrome 扩展登录 |
 | **关联文档** | [`AGENTS.md`](../../AGENTS.md)、[`.env.example`](../../.env.example)、[`lib/site-config.ts`](../../lib/site-config.ts) |
 | **参考实现** | 互远技能中心 `huyuan-ai-skills-gate`：`app/api/hooks/supabase/send-sms`、`lib/aliyun-sms.ts`、`app/api/site/auth/sign-in/phone/*`（本仓库映射为 `/api/web/auth/*`） |
@@ -402,3 +406,72 @@ stateDiagram-v2
 | 日期 | 说明 |
 |------|------|
 | 2026-06-19 | 初稿：官网前后端分离手机号 OTP；Web BFF `/api/web/auth/*`；扩展不在范围；R1 不含插件 |
+
+## 12. 工程验收状态
+
+> 由 `/team:prd-accept` 维护；勿手工编造「通过」。最后更新：2026-06-19T13:51:50Z，main@61896fe，范围：all。
+
+### 总览
+
+- **工程状态**：`partial`（R0/R1 代码已落地，质量与运营配置仍有遗留）
+- **验收判定**：核心 BFF、Hook、登录页与顶栏登录态已实现；Hook 直调 + 阿里云发信已人工验证；完整 `signInWithOtp` 闭环依赖 Supabase Dashboard / 环境变量正确配置
+- **最近验收**：2026-06-19T13:51:50Z @ `61896fe`
+- **摘要**：
+  - Web BFF 四接口 + Send SMS Hook + `/login` 分步 UI + Header 登录/退出已入库
+  - R1：`/me` refresh、API 契约文档、隐私政策增补、Vitest 单测、顶栏 loading 已实现
+  - `pnpm test` 10/10 通过；`pnpm lint` 因 `auth-status.tsx` 规则报错未通过
+  - OTP 步骤 UI 已按产品新稿迭代（「下一步」等），与 PRD §6.4 初稿文案略有差异
+
+### Release 交付
+
+| Release | 状态 | 说明 |
+|---------|------|------|
+| R0 MVP | 部分 | 代码齐全；登录闭环需 Dashboard Hook URL + 有效 `SUPABASE_PUBLISHABLE_KEY`；节流 429 逻辑已实现，全链路抽检待补 |
+| R1 | 部分 | 契约/refresh/隐私/单测/loading 已交付；`pnpm lint` 未绿 |
+| R2 | 范围外 | `user_profiles`、订阅门禁等不在本 PRD |
+
+### 功能验收清单（Agent 优先读此表）
+
+| ID | 能力摘要 | Release | 状态 | 证据 |
+|----|----------|---------|------|------|
+| G1 | `/login` 分步 UI（手机号 → 6 格 OTP） | R0 | 通过 | `app/(marketing)/login/_components/login-panel.tsx` |
+| G1b | OTP 步文案/布局（返回、3+3 分格、下一步） | R0 | 部分 | 同上；与 PRD §6.4 初稿「登录/修改号码」文案不一致，已按新设计稿实现 |
+| G2 | Web BFF 四接口 | R0 | 通过 | `app/api/web/auth/sign-in/phone/route.ts`、`.../verify/route.ts`、`me/route.ts`、`logout/route.ts` |
+| G3 | Send SMS Hook + 阿里云 + 30s 节流 | R0 | 通过 | `app/api/hooks/supabase/send-sms/route.ts`、`lib/aliyun-sms.ts`、`lib/auth/cooldown.ts`；Hook 直调 200 + 收信已验证 |
+| G3b | BFF `signInWithOtp` 发码闭环 | R0 | 部分 | 同上 BFF；曾因无效 Supabase key 返回 500，需运维配置后复验 |
+| G4 | 协议勾选禁用发码 | R0 | 通过 | `login-panel.tsx` `canSend` 含 `agreed` |
+| G5 | Header 登录 / 脱敏号 / 退出 | R0 | 通过 | `auth-status.tsx`、`site-header.tsx`；`maskChinaMobile` 兼容 `86` 前缀 |
+| G6 | HttpOnly Cookie；无 `NEXT_PUBLIC_SUPABASE_*` | R0 | 通过 | `lib/auth/cookies.ts`；仓库无 `NEXT_PUBLIC_SUPABASE` |
+| R1-1 | `/me` 契约文档 | R1 | 通过 | `specs/api/web-auth-me.md` |
+| R1-2 | `/me` 会话 refresh + Cookie 回写 | R1 | 通过 | `lib/auth/session.ts` |
+| R1-3 | 隐私政策官网账号/短信条款 | R1 | 部分 | `privacy/_content.ts` 已增补；法务审阅待补（PRD 开放项） |
+| R1-4 | Hook 验签 + phone/E.164 单测 | R1 | 通过 | `lib/supabase-send-sms-hook.test.ts`、`lib/phone.test.ts`；`pnpm test` 10/10 |
+| R1-5 | 顶栏加载态 | R1 | 通过 | `auth-status.tsx` loading skeleton |
+| US-A1 | Header「登录」→ `/login` | R0 | 通过 | `auth-status.tsx` |
+| US-A2 | `?next=` 站内相对路径防开放重定向 | R0 | 通过 | `lib/auth/sanitize-next.ts`、`login/page.tsx` |
+| US-A3 | 已登录访问 `/login` redirect | R0 | 通过 | `login/page.tsx` `resolveAuthenticatedUser` |
+| US-C1 | 错误 OTP 可读提示 | R0 | 通过 | `lib/auth/supabase-errors.ts`；API 实测 `INVALID_OTP` |
+| US-C2 | 登出后顶栏回「登录」 | R0 | 通过 | `auth-status.tsx` `POST /logout` |
+| ENV | `.env.example` Hook/阿里云变量 | R0 | 通过 | `.env.example` |
+| CFG | `supabase/config.toml` SMS signup | R0 | 通过 | `[auth.sms] enable_signup = true` |
+| OPS | Supabase Dashboard Phone + Hook URL | R0 | 部分 | 代码就绪；生产/本地 ngrok 配置由运维维护，不在仓库验收 |
+
+### 未完成与遗留
+
+1. **修复 `pnpm lint`**：`auth-status.tsx` `react-hooks/set-state-in-effect`（`useEffect` 内 `setLoading(true)`）
+2. **运营配置**：Supabase Dashboard 启用 Phone、Send SMS Hook URL 指向可访问的 `/api/hooks/supabase/send-sms`；`.env.local` 填入真实 `SUPABASE_PUBLISHABLE_KEY` 等
+3. **人工回归**：PRD §2.3 登录闭环 10 次抽检、30s 节流 429 全链路、生产 bundle 无密钥 grep
+4. **文档同步**：[`AGENTS.md`](../../AGENTS.md) 仍写「暂不接入 Supabase 客户端 SDK」，与当前 BFF 实现不一致，建议后续 PR 更新
+5. **OTP UI 与 PRD §6.4 初稿对齐**：若需严格一致可另开 UI 微调；当前按产品新稿交付
+
+### 质量检查
+
+| 检查项 | 状态 |
+|--------|------|
+| `pnpm lint` | 未通过（`auth-status.tsx` 1 error） |
+| `pnpm test` | 通过（10/10） |
+| `pnpm build` | 未在本轮验收执行（历史构建已通过） |
+| 文档与营销内容一致性 | 部分（隐私已增补；`AGENTS.md` 待同步） |
+
+---
+统计：通过 18 / 部分 7 / 未实现 0 / 范围外 1
