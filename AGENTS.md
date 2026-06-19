@@ -67,6 +67,11 @@ lib/
 content/geo/
 └── enterprise-base.json    # GEO 企业实体数据（JSON-LD 来源）
 
+specs/
+├── prds/                   # PRD 文档（/team:product-manager 落盘）
+│   └── prd-wiki-index.md   # PRD 索引
+└── features/               # Feature Spec（/team:po-explorer 落盘）
+
 public/
 ├── brand/                  # 图标与浏览器 logo（icon-*.png、chrome.png、edge.png）
 ├── llms.txt                # AI 爬虫摘要
@@ -119,7 +124,7 @@ public/
 ## 与 Chrome 扩展的关系
 
 - 扩展 ID 与商店链接定义在 `lib/site-config.ts` 的 `CHROME_EXTENSION_ID`。
-- 本仓库**不包含**扩展源码；`features/` 目录在 `.gitignore` 中，勿在此仓库实现扩展逻辑。
+- 本仓库**不包含**扩展源码；根级 `/features/` 目录在 `.gitignore` 中（Chrome 扩展本体），勿在此仓库实现扩展逻辑。`specs/features/` 为 Feature Spec 规格区，与扩展源码无关。
 - 版本号：`SITE_CONFIG.version` 应与扩展发版及 `changelog/_content.ts` 保持一致。
 
 ## Agent 注意事项
@@ -136,8 +141,11 @@ public/
 
 | 命令 | 职责 |
 |------|------|
-| `/team:product-manager <feature-slug>` | 撰写 PRD，落盘 `prds/prd-NNNNN-<slug>.md` |
+| `/team:po-explorer <topic>` | 需求探索，落盘 `specs/features/feat-NNNNN-<slug>.md` |
+| `/team:product-manager <feature-slug>` | 撰写 PRD，落盘 `specs/prds/prd-NNNNN-<slug>.md` |
 | `/team:front-enginer <task>` | 前端实现 |
 | `/team:prd-accept <prd-ref>` | 对照代码验收，回写 PRD 文末「工程验收状态」 |
 
-PRD 索引：[`prds/prd-wiki-index.md`](prds/prd-wiki-index.md)
+探索收敛后可由 `/team:product-manager` 将 Feature Spec 对齐为正式 PRD。
+
+PRD 索引：[`specs/prds/prd-wiki-index.md`](specs/prds/prd-wiki-index.md)

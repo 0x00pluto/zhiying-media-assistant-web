@@ -76,5 +76,5 @@ tmp/
 temp/
 *.tmp
 
-features/
+/features/
 .cursor/
