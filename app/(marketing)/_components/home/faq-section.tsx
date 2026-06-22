@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import {
   Accordion,
   AccordionContent,
@@ -5,7 +7,10 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Card } from "@/components/ui/card";
-import { FAQ_ITEMS } from "@/app/(marketing)/_config/marketing-content";
+import {
+  FAQ_ITEMS,
+  HELP_COPY,
+} from "@/app/(marketing)/_config/marketing-content";
 
 export function FaqSection() {
   return (
@@ -36,6 +41,15 @@ export function FaqSection() {
             </Card>
           ))}
         </Accordion>
+
+        <div className="mt-10 text-center">
+          <Link
+            href={HELP_COPY.viewAllHref}
+            className="text-sm font-semibold text-primary underline-offset-4 hover:underline"
+          >
+            {HELP_COPY.viewAllLabel} →
+          </Link>
+        </div>
       </div>
     </section>
   );

@@ -21,6 +21,7 @@
 /.next/
 /out/
 /.swc
+/.source/
 
 # production
 /build

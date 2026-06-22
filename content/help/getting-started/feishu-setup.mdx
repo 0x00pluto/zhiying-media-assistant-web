@@ -1,0 +1,64 @@
+---
+title: 配置飞书自建应用
+description: 创建飞书自建应用、导入权限、发布版本并填写 App ID 与 App Secret
+---
+
+import {
+  CopyCodeBlock,
+  FEISHU_APP_SCOPES_JSON,
+} from "@/components/help/copy-code-block";
+
+飞书同步为**可选功能**。若只需 CSV 导出，可跳过本步骤。完整同步说明请参阅 [飞书同步](/help/features/feishu-sync)。
+
+## 获取飞书 App ID 和 App Secret
+
+本文讲解如何配置飞书应用信息，以便将采集数据同步到飞书多维表格。
+
+### 创建应用
+
+前往 [飞书开放平台](https://open.feishu.cn/app) 创建一个企业自建应用。填写应用名称、描述与图标后，点击**创建**。
+
+![在飞书开放平台创建企业自建应用，填写应用名称与描述后点击创建](/brand/help/feishu/create-app.png)
+
+### 添加应用权限
+
+进入应用详情 → 点击**权限管理** → **批量导入/导出权限**，输入以下内容并确认：
+
+<CopyCodeBlock code={FEISHU_APP_SCOPES_JSON} title="批量导入权限 JSON" />
+
+导入的权限分别是：
+
+- **查看、评论、编辑和管理多维表格**（`bitable:app`）
+- **查看、编辑和管理知识库**（`wiki:wiki`）
+- **通过手机号或邮箱获取用户 ID**（`contact:user.id:readonly`）
+
+也可不通过批量导入，而是手动开通以上权限。若无需使用应用创建表格，则「通过手机号或邮箱获取用户 ID」权限可以不开启。
+
+![进入应用详情，打开权限管理并点击批量导入/导出权限](/brand/help/feishu/permissions.png)
+
+![在批量导入弹窗中粘贴权限 JSON，点击下一步确认新增权限](/brand/help/feishu/import-permissions.png)
+
+### 版本管理与发布
+
+应用配置好后，需要发版才能生效。进入 **版本管理与发布 → 创建版本**，填写版本号与更新说明后点击**保存**，再确认发布并上线。
+
+![填写版本详情后保存并发布上线](/brand/help/feishu/publish-version.png)
+
+### 复制凭证
+
+应用发布之后，在飞书开放平台 **凭证与基础信息** 页面复制 **App ID** 与 **App Secret**，并粘贴到扩展「飞书配置」中保存。
+
+![从飞书开放平台复制 App ID 与 App Secret，粘贴到智赢媒体助手飞书同步配置](/brand/help/feishu/copy-credentials.png)
+
+## 在扩展中填写凭证
+
+1. 打开小红书页面，按 `Alt + C` 呼出侧边栏。
+2. 点击右上角齿轮进入「设置」→「飞书配置」。
+3. 将上一步复制的 App ID、App Secret 粘贴到对应输入框并保存。
+4. 配置仅存储在浏览器本地，不会上传至智赢服务器。
+
+填写完成后，可继续阅读 [首次采集与同步](/help/getting-started/first-sync) 或 [飞书同步](/help/features/feishu-sync) 了解数据写入方式。
+
+## 常见问题
+
+若同步失败，请参阅 [飞书同步失败排查](/help/troubleshooting/feishu-sync-failed)。

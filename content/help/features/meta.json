@@ -1,0 +1,5 @@
+{
+  "title": "功能指南",
+  "defaultOpen": true,
+  "pages": ["note-capture", "batch-scrape", "creator-search", "comments", "feishu-sync"]
+}

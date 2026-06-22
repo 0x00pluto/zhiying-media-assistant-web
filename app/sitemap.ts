@@ -1,8 +1,9 @@
 import type { MetadataRoute } from "next";
 
 import { SITE_ORIGIN } from "@/lib/geo-config";
+import { helpSource } from "@/lib/help-source";
 
-const ROUTES: MetadataRoute.Sitemap = [
+const STATIC_ROUTES: MetadataRoute.Sitemap = [
   {
     url: SITE_ORIGIN,
     lastModified: new Date("2026-06-16"),
@@ -36,5 +37,12 @@ const ROUTES: MetadataRoute.Sitemap = [
 ];
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  return ROUTES;
+  const helpRoutes: MetadataRoute.Sitemap = helpSource.getPages().map((page) => ({
+    url: `${SITE_ORIGIN}${page.url}`,
+    lastModified: new Date("2026-06-22"),
+    changeFrequency: "weekly",
+    priority: page.url === "/help" ? 0.8 : 0.7,
+  }));
+
+  return [...STATIC_ROUTES, ...helpRoutes];
 }

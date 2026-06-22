@@ -1,0 +1,5 @@
+{
+  "title": "故障排查",
+  "defaultOpen": true,
+  "pages": ["sidebar-missing", "feishu-sync-failed", "rate-limit", "empty-video-link"]
+}

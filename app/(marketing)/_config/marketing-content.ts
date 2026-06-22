@@ -3,7 +3,7 @@ export const NAV_LINKS = [
   { href: "/#how-it-works", label: "快速上手" },
   { href: "/#feishu-sync", label: "飞书联动" },
   { href: "/#pricing", label: "方案定价" },
-  { href: "/#faq", label: "常见问题" },
+  { href: "/help", label: "常见问题" },
 ] as const;
 
 export const STATS = [
@@ -218,11 +218,17 @@ export const FAQ_ITEMS = [
   },
 ] as const;
 
+export const HELP_COPY = {
+  viewAllLabel: "查看全部帮助",
+  viewAllHref: "/help",
+} as const;
+
 export const FOOTER_LINKS = {
   product: [
-    { href: "/#how-it-works", label: "如何连接飞书云多维表" },
-    { href: "/#features", label: "如何避免采集速率风控" },
-    { href: "/#faq", label: "常见常见问题自检清单" },
+    { href: "/help", label: "帮助中心" },
+    { href: "/help/getting-started/feishu-setup", label: "如何连接飞书云多维表" },
+    { href: "/help/troubleshooting/rate-limit", label: "如何避免采集速率风控" },
+    { href: "/help/troubleshooting/sidebar-missing", label: "常见问题自检清单" },
     { href: "/changelog", label: "更新变更日志记录 (Changelog)" },
   ],
   legal: [

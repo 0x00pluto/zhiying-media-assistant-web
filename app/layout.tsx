@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Geist_Mono, Inter, Noto_Sans_SC } from "next/font/google";
 
+import { RootProvider } from "fumadocs-ui/provider/next";
+
 import { ThemeProvider } from "@/components/providers/theme-provider";
 import { ORG_CONFIG, SITE_CONFIG } from "@/lib/site-config";
 import { cn } from "@/lib/utils";
@@ -64,7 +66,9 @@ export default function RootLayout({
         suppressHydrationWarning
       >
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-          {children}
+          <RootProvider search={{ enabled: false }} theme={{ enabled: false }}>
+            {children}
+          </RootProvider>
         </ThemeProvider>
       </body>
     </html>

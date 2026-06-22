@@ -1,0 +1,24 @@
+/* Help center: light sidebar, no desktop collapse affordance */
+
+.help-docs-layout #nd-sidebar {
+  background-color: #fff;
+  border-inline-end: none;
+}
+
+.help-docs-layout [data-sidebar-panel] {
+  display: none;
+}
+
+.dark .help-docs-layout #nd-sidebar {
+  background-color: #fff;
+  color: oklch(0.145 0 0);
+}
+
+.dark .help-docs-layout #nd-sidebar .text-fd-muted-foreground {
+  color: oklch(0.556 0 0);
+}
+
+.dark .help-docs-layout #nd-sidebar .text-fd-primary,
+.dark .help-docs-layout #nd-sidebar [data-active="true"] {
+  color: var(--primary);
+}
