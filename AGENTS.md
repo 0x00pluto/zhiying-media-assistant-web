@@ -84,11 +84,13 @@ scripts/
 ├── db-migration-new.mjs    # 创建空迁移（UTC 时间戳）
 └── db-migration-sync-remote.mjs  # 安全同步远端独有迁移
 
+docs/
+├── api/                    # Web BFF API 契约（Markdown）
+└── openapi/                # OpenAPI 3.0 JSON（dev 专用 `/api/openapi.json`）
+
 specs/
 ├── prds/                   # PRD 文档（/team:product-manager 落盘）
 │   └── prd-wiki-index.md   # PRD 索引
-├── api/                    # Web BFF API 契约（Markdown）
-├── openapi/                # OpenAPI 3.0 JSON（dev 专用 `/api/openapi.json`）
 └── features/               # Feature Spec（/team:po-explorer 落盘）
 
 public/
@@ -119,7 +121,7 @@ public/
 | 导航、功能点、定价、FAQ、统计数据 | `app/(marketing)/_config/marketing-content.ts` |
 | 隐私 / 协议 / 合规正文 | 各页面目录下的 `_content.ts` |
 | 更新日志 | `app/(marketing)/changelog/_content.ts` |
-| Web Auth API 契约 / OpenAPI | `specs/api/web-auth-me.md`、`specs/openapi/web-auth.openapi.json` |
+| Web Auth API 契约 / OpenAPI | `docs/api/web-auth-me.md`、`docs/openapi/web-auth.openapi.json` |
 | 企业 GEO 实体信息 | `content/geo/enterprise-base.json` |
 | 新增页面到 sitemap | `app/sitemap.ts`（同步更新 `lastModified`） |
 

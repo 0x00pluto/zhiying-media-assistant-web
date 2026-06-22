@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { isOpenApiEnabled } from "@/lib/openapi/dev-guard";
-import openApiSpec from "@/specs/openapi/web-auth.openapi.json";
+import openApiSpec from "@/docs/openapi/web-auth.openapi.json";
 
 export function serveOpenApiSpec() {
   if (!isOpenApiEnabled()) {

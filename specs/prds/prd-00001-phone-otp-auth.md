@@ -281,7 +281,7 @@ Hook 约束：5s 总超时（含最多 3 次重试）；成功须 HTTP 200 + `{}
 |---------|--------|------------|
 | **R0 MVP** | Web BFF 四接口；Hook + 阿里云；`/login` 分步 UI；Header 登录/退出；协议勾选；30s 节流；`.env.example` 补齐 | 官网真实手机 OTP 登录闭环；顶栏状态正确 |
 | **R1** | `/me` 契约文档化；可选会话 refresh；隐私政策增补短信/账号条款；Hook 验签与 E.164 单测；顶栏加载态 | 登录态可靠、可测、合规文案就绪 |
-| **R2（后续 PRD）** | `user_profiles` 表、订阅门禁、账号中心 | 不在本 PRD 实现 |
+| **R2（后续 PRD）** | `user_profiles` 表、订阅门禁、账号中心 | 账号中心 + 公测权益见 [`prd-00002-web-account-center-beta-entitlement.md`](prd-00002-web-account-center-beta-entitlement.md)；订阅门禁仍范围外 |
 
 **R1 明确排除**：扩展 API、Bridge、跨端会话、扩展 OTP UI。
 
@@ -428,7 +428,7 @@ stateDiagram-v2
 |---------|------|------|
 | R0 MVP | 部分 | 代码齐全；登录闭环需 Dashboard Hook URL + 有效 `SUPABASE_PUBLISHABLE_KEY`；节流 429 逻辑已实现，全链路抽检待补 |
 | R1 | 部分 | 契约/refresh/隐私/单测/loading 已交付；`pnpm lint` 未绿 |
-| R2 | 范围外 | `user_profiles`、订阅门禁等不在本 PRD |
+| R2 | 范围外 | 账号中心 + 公测权益见 [`prd-00002-web-account-center-beta-entitlement.md`](prd-00002-web-account-center-beta-entitlement.md)；订阅门禁仍范围外 |
 
 ### 功能验收清单（Agent 优先读此表）
 
@@ -442,7 +442,7 @@ stateDiagram-v2
 | G4 | 协议勾选禁用发码 | R0 | 通过 | `login-panel.tsx` `canSend` 含 `agreed` |
 | G5 | Header 登录 / 脱敏号 / 退出 | R0 | 通过 | `auth-status.tsx`、`site-header.tsx`；`maskChinaMobile` 兼容 `86` 前缀 |
 | G6 | HttpOnly Cookie；无 `NEXT_PUBLIC_SUPABASE_*` | R0 | 通过 | `lib/auth/cookies.ts`；仓库无 `NEXT_PUBLIC_SUPABASE` |
-| R1-1 | `/me` 契约文档 | R1 | 通过 | `specs/api/web-auth-me.md` |
+| R1-1 | `/me` 契约文档 | R1 | 通过 | `docs/api/web-auth-me.md` |
 | R1-2 | `/me` 会话 refresh + Cookie 回写 | R1 | 通过 | `lib/auth/session.ts` |
 | R1-3 | 隐私政策官网账号/短信条款 | R1 | 部分 | `privacy/_content.ts` 已增补；法务审阅待补（PRD 开放项） |
 | R1-4 | Hook 验签 + phone/E.164 单测 | R1 | 通过 | `lib/supabase-send-sms-hook.test.ts`、`lib/phone.test.ts`；`pnpm test` 10/10 |
