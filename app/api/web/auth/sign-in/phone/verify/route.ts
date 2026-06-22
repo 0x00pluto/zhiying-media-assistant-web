@@ -1,3 +1,4 @@
+import { ensureProfile } from "@/lib/account/ensure-profile";
 import {
   createAuthClient,
   setSessionCookies,
@@ -49,6 +50,15 @@ export async function POST(request: Request) {
     }
 
     await setSessionCookies(data.session);
+
+    if (data.user?.id && phoneE164) {
+      try {
+        await ensureProfile({ userId: data.user.id, phoneE164 });
+      } catch {
+        // profile 写入失败不阻断登录；GET /account 可边缘补建
+      }
+    }
+
     return authOk({});
   } catch {
     return authError(500, "SERVER_ERROR", "登录失败，请稍后重试");

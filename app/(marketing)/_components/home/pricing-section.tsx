@@ -1,14 +1,47 @@
 "use client";
 
 import { Check, X } from "lucide-react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 
+import { ACCOUNT_COPY, PRICING_PLANS } from "@/app/(marketing)/_config/marketing-content";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { PRICING_PLANS } from "@/app/(marketing)/_config/marketing-content";
 import { SITE_CONFIG } from "@/lib/site-config";
 import { cn } from "@/lib/utils";
 
+type MeResponse =
+  | { loggedIn: false }
+  | { loggedIn: true; phoneMasked: string; userId: string };
+
 export function PricingSection() {
+  const pathname = usePathname();
+  const [authLoading, setAuthLoading] = useState(true);
+  const [me, setMe] = useState<MeResponse>({ loggedIn: false });
+
+  useEffect(() => {
+    let cancelled = false;
+
+    void (async () => {
+      try {
+        const response = await fetch("/api/web/auth/me", {
+          credentials: "include",
+        });
+        const body = (await response.json()) as MeResponse;
+        if (!cancelled) setMe(body);
+      } catch {
+        if (!cancelled) setMe({ loggedIn: false });
+      } finally {
+        if (!cancelled) setAuthLoading(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [pathname]);
+
   return (
     <section id="pricing" className="bg-background py-20">
       <div className="container mx-auto px-4 md:px-8">
@@ -109,16 +142,19 @@ export function PricingSection() {
                 </ul>
 
                 {plan.id === "pro" ? (
-                  <Button
-                    className="w-full font-bold"
-                    onClick={() =>
-                      alert(
-                        "感谢支持！我们目前免费开放公测专业版所有功能。您下载并安装扩展后即可在侧栏无限制直接使用。",
-                      )
-                    }
-                  >
-                    {plan.cta}
-                  </Button>
+                  authLoading ? (
+                    <div className="h-10 w-full animate-pulse rounded-md bg-muted" />
+                  ) : me.loggedIn ? (
+                    <Button asChild className="w-full font-bold">
+                      <Link href="/account">{ACCOUNT_COPY.pricingLoggedInCta}</Link>
+                    </Button>
+                  ) : (
+                    <Button asChild className="w-full font-bold">
+                      <Link href="/login?next=/account">
+                        {ACCOUNT_COPY.pricingLoggedOutCta}
+                      </Link>
+                    </Button>
+                  )
                 ) : "isEnterprise" in plan && plan.isEnterprise ? (
                   <Button
                     variant="outline"

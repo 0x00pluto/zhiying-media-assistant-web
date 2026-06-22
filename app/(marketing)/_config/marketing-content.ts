@@ -170,6 +170,29 @@ export const PRICING_PLANS = [
   },
 ] as const;
 
+export const ACCOUNT_COPY = {
+  pageTitle: "账号中心",
+  pageDescription: "查看您的账号信息与会员权益",
+  phoneLabel: "绑定手机号",
+  registeredAtLabel: "注册时间",
+  entitlementTitle: "当前权益",
+  extensionBindingTitle: "扩展绑定",
+  extensionBindingDescription: "Chrome 扩展账号绑定功能即将支持，届时可在扩展侧栏一键关联官网账号。",
+  installExtension: "安装 Chrome 扩展",
+  logout: "退出登录",
+  loggingOut: "退出中...",
+  retry: "重试",
+  loadError: "账号信息暂时无法加载，请稍后重试",
+  expiresActive: (date: string) => `有效期至 ${date}`,
+  expiresExpired: (date: string) => `已于 ${date} 到期`,
+  expiredHint: "如需续费或升级，请联系客服获取帮助。",
+  statusActive: "有效",
+  statusExpired: "已过期",
+  statusRevoked: "已撤销",
+  pricingLoggedInCta: "查看我的权益",
+  pricingLoggedOutCta: "登录领取 Pro 会员",
+} as const;
+
 export const FAQ_ITEMS = [
   {
     question: "打开小红书网页版后，侧边栏没有出现采集按钮？",

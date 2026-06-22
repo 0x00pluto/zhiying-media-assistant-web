@@ -26,6 +26,8 @@ pnpm dev      # 本地开发 http://localhost:3000
 pnpm build    # 生产构建
 pnpm start    # 启动生产服务
 pnpm lint     # ESLint 检查
+pnpm test     # Vitest 单测（lib/**/*.test.ts）
+pnpm openapi:emit  # 从 lib/openapi/schemas/* 生成 docs/openapi/web-auth.openapi.json
 ```
 
 数据库迁移（需本机安装 [Supabase CLI](https://supabase.com/docs/guides/cli) 并完成 `supabase link`）：
@@ -59,6 +61,8 @@ app/
     │   ├── legal/          # 法律文档通用布局
     │   └── seo/            # JSON-LD 注入
     ├── privacy/            # page.tsx + _content.ts
+    ├── login/              # 手机号 OTP 登录（noindex）
+    ├── account/            # 账号中心（需登录，noindex）
     ├── terms/
     ├── compliance/
     └── changelog/
@@ -71,6 +75,8 @@ components/
 lib/
 ├── site-config.ts          # 站点名、版本、Chrome 商店链接、组织信息
 ├── geo-config.ts           # Schema.org JSON-LD 构建
+├── auth/                   # Cookie 会话、OTP BFF 辅助、service client
+├── account/                # profile 幂等创建、公测判定、权益快照
 └── utils.ts                # cn() 等工具
 
 content/geo/
@@ -86,7 +92,12 @@ scripts/
 
 docs/
 ├── api/                    # Web BFF API 契约（Markdown）
-└── openapi/                # OpenAPI 3.0 JSON（dev 专用 `/api/openapi.json`）
+└── openapi/                # OpenAPI 3.0 JSON（Zod 生成产物，勿手改）
+
+lib/openapi/
+├── schemas/                # Zod schema + registerPath（单一事实源）
+├── generate-document.ts    # 组装 OpenAPI 3.0 文档
+└── serve-spec.ts           # dev 专用 /api/openapi.json
 
 specs/
 ├── prds/                   # PRD 文档（/team:product-manager 落盘）
@@ -106,6 +117,8 @@ public/
 | 路径 | 说明 |
 |------|------|
 | `/` | 营销首页（锚点：features、how-it-works、feishu-sync、pricing、faq） |
+| `/login` | 手机号 OTP 登录（`robots: noindex`） |
+| `/account` | 账号中心：脱敏手机号、Pro 会员权益与到期时间（需登录，`robots: noindex`，**不**进 sitemap） |
 | `/privacy` | 隐私政策 |
 | `/terms` | 用户协议 |
 | `/compliance` | 合规声明 |
@@ -121,7 +134,10 @@ public/
 | 导航、功能点、定价、FAQ、统计数据 | `app/(marketing)/_config/marketing-content.ts` |
 | 隐私 / 协议 / 合规正文 | 各页面目录下的 `_content.ts` |
 | 更新日志 | `app/(marketing)/changelog/_content.ts` |
-| Web Auth API 契约 / OpenAPI | `docs/api/web-auth-me.md`、`docs/openapi/web-auth.openapi.json` |
+| Web Auth API 契约 / OpenAPI | `docs/api/web-auth-me.md`；OpenAPI 由 `lib/openapi/schemas/*` 生成 |
+| Web Account API 契约 | `docs/api/web-auth-account.md`；schema 见 `lib/openapi/schemas/account.ts` |
+| 改 BFF 请求/响应契约 | 先改 `lib/openapi/schemas/`，再 `pnpm openapi:emit` 与 `docs/api/*.md` |
+| 账号页文案、权益展示 copy | `app/(marketing)/_config/marketing-content.ts`（`ACCOUNT_COPY`） |
 | 企业 GEO 实体信息 | `content/geo/enterprise-base.json` |
 | 新增页面到 sitemap | `app/sitemap.ts`（同步更新 `lastModified`） |
 
@@ -134,7 +150,7 @@ public/
 3. **中文优先**：`lang="zh-CN"`，文案与 metadata 使用简体中文；字体为 Inter + Noto Sans SC。
 4. **图片**：品牌资源放 `public/brand/`，组件内用 `next/image`。
 5. **法律页**：共用 `LegalDocument`，各页 `_content.ts` 导出 `sections` 结构。
-6. **变更范围**：保持 diff 最小；应用层当前仍为静态营销站。数据库结构变更须经 `supabase/migrations/` 管理；暂不接入 Supabase 客户端 SDK，连库与业务 API 在后续 PR 落地。
+6. **变更范围**：保持 diff 最小。营销页以静态内容为主；**账号化能力**经 Web BFF（`app/api/web/*`）读写 Supabase Auth + 业务表（`user_profiles`、`app_config`），前端不直连 Supabase、不使用 `NEXT_PUBLIC_SUPABASE_*`。数据库结构变更须经 `supabase/migrations/` 管理。
 
 ## Supabase / 数据库迁移
 
@@ -145,6 +161,7 @@ public/
 - **不可变历史**：已合并、已上线的 migration 文件不可改写；修复与纠偏用**新 migration** 前滚。
 - **环境变量**：模板见 [`.env.example`](.env.example)（`SUPABASE_URL`、`SUPABASE_PUBLISHABLE_KEY`、`SUPABASE_SECRET_KEY`、`SUPABASE_JWKS_URL`）。本地：`cp .env.example .env.local` 后从 Dashboard → API 填入；Vercel 已连 Supabase 时可 `vercel env pull .env.local`。
 - **密钥**：`SUPABASE_SECRET_KEY` 仅服务端使用，不得加 `NEXT_PUBLIC_` 前缀；migration 文件中禁止写密钥。
+- **业务表**：`public.user_profiles`（方案 `free|pro|enterprise`、到期时间、权益状态）、`public.app_config`（公测截止日 `beta_enrollment_ends_at`、Pro 时长 `beta_pro_duration_days`）；BFF 用 `SUPABASE_SECRET_KEY` 写入 profile、读取配置。
 - **前置**：本机安装 Supabase CLI → `supabase login` → `supabase link --project-ref <ref>`。
 
 ## SEO / GEO

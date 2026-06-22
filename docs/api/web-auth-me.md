@@ -2,7 +2,7 @@
 
 官网前端仅调用本文档定义的 `/api/web/auth/*` 接口；不直连 Supabase。
 
-**OpenAPI（开发环境）**：机器可读规范见 [`docs/openapi/web-auth.openapi.json`](../openapi/web-auth.openapi.json)；本地 `pnpm dev` 后访问 `http://localhost:3000/api/openapi` 或 `http://localhost:3000/api/openapi.json`。生产环境上述端点返回 404。
+**OpenAPI（开发环境）**：由 [`lib/openapi/schemas/`](../lib/openapi/schemas/) 的 Zod schema **自动生成**；落盘文件 [`docs/openapi/web-auth.openapi.json`](../openapi/web-auth.openapi.json) 仅供 diff/外部工具，**请勿手改**（改 schema 后执行 `pnpm openapi:emit`）。本地 `pnpm dev` 后访问 `http://localhost:3000/api/openapi.json` 可获取实时规范。生产环境上述端点返回 404。
 
 ## 通用约定
 

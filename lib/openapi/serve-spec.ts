@@ -1,12 +1,14 @@
 import { NextResponse } from "next/server";
 
+import { buildWebBffOpenApiDocument } from "@/lib/openapi/generate-document";
 import { isOpenApiEnabled } from "@/lib/openapi/dev-guard";
-import openApiSpec from "@/docs/openapi/web-auth.openapi.json";
 
-export function serveOpenApiSpec() {
+export async function serveOpenApiSpec() {
   if (!isOpenApiEnabled()) {
     return new NextResponse(null, { status: 404 });
   }
+
+  const openApiSpec = buildWebBffOpenApiDocument();
 
   return NextResponse.json(openApiSpec, {
     headers: {

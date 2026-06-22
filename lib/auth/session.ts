@@ -6,11 +6,10 @@ import {
   readSessionTokens,
   setSessionCookies,
 } from "@/lib/auth/cookies";
+import type { MeResponse } from "@/lib/openapi/schemas/auth";
 import { maskChinaMobile } from "@/lib/phone";
 
-export type MeResponse =
-  | { loggedIn: false }
-  | { loggedIn: true; userId: string; phoneMasked: string };
+export type { MeResponse };
 
 function toMeResponse(user: User): MeResponse {
   const phone = user.phone ?? "";

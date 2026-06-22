@@ -48,6 +48,7 @@ created: 2026-06-22T02:44:41Z
 | **权益快照** | 服务端返回的 `plan` + `status` + 可选 `expiresAt`，页面据此渲染 |
 | **profile 幂等创建** | 同一 `auth.users.id` 多次读取 account 不重复插入业务行 |
 | **Web BFF** | Next.js `app/api/web/*`，前端不直连 Supabase |
+| **公测配置** | `public.app_config` 键 `beta_enrollment_ends_at`；未配置或 `now() <= ends_at` 视为公测开放 |
 
 ### 关联文档
 
@@ -68,13 +69,15 @@ created: 2026-06-22T02:44:41Z
 
 | # | 规则 | 说明 |
 |---|------|------|
-| R1 | **公测注册即 `pro_beta`** | 公测开关开启时，首次 OTP 验证成功或首次读取 account 时服务端授予 |
+| R1 | **公测期内新注册即 `pro_beta`** | 首次 verify 创建 profile 时，若 `ends_at` 未配置或 `now() <= ends_at` |
 | R2 | **权益以 DB 为准** | 前端不得仅凭 `marketing-content` 推断用户方案；API 返回 `entitlement` |
 | R3 | **不承诺永久 Pro** | 页面文案写「公测 Pro 体验中」；`expires_at` 字段预留，MVP 可为 `null` |
 | R4 | **profile 服务端创建** | 在 `verify` 成功或 `GET /account` 时 BFF 幂等 upsert，禁止浏览器直写库 |
 | R5 | **仅读自己的数据** | RLS：`user_id = auth.uid()`；BFF 使用用户 session，不接受任意 `userId` 参数 |
 | R6 | **扩展绑定占位** | 账号页可展示「扩展绑定即将支持」说明，MVP 不实现绑定码 |
-| R7 | **公测结束后新用户** | 环境变量或配置表控制 `beta_enrollment_open`；关闭后新用户默认 `free`，历史 `pro_beta` 保留 |
+| R7 | **公测结束后新用户** | `app_config.beta_enrollment_ends_at` 已过期时新注册 `free`，历史 `pro_beta` 保留 |
+| R8 | **授予一次性** | `plan` 在 profile 首次 insert 时确定；已存在 profile 只读 |
+| R9 | **公测配置存 DB** | `public.app_config`；运维改日期无需发版；BFF service role 读取 |
 
 ### 边界与异常情形（不少于 5 条）
 
@@ -82,7 +85,7 @@ created: 2026-06-22T02:44:41Z
 2. **会话过期**：访问 account API 返回 401 或 `{ loggedIn: false }`，前端 redirect 登录页。
 3. **并发首次登录**：同一用户多端同时 verify，profile upsert 使用 `ON CONFLICT (user_id) DO NOTHING` 或等价幂等。
 4. **越权读取**：客户端传他人 `userId` 无效；BFF 只解析 Cookie 内 session。
-5. **公测开关关闭后新注册**：写入 `plan = free`，账号页展示「免费基础版」。
+5. **公测结束后新注册**：`now() > beta_enrollment_ends_at` 时写入 `plan = free`，账号页展示「免费基础版」。
 6. **Supabase 不可用**：account API 返回 503 + 用户可读文案，账号页展示错误态与重试。
 7. **已登录访问 `/login`**：沿用现有逻辑 redirect `next`（已有 [`login/page.tsx`](../../app/(marketing)/login/page.tsx)）。
 
@@ -114,11 +117,13 @@ sequenceDiagram
   participant Web as WebFrontend
   participant BFF as WebBFF
   participant Auth as Supabase_Auth
+  participant Config as app_config
   participant DB as user_profiles
 
   Web->>BFF: POST /api/web/auth/sign-in/phone/verify
   BFF->>Auth: verifyOtp
   Auth-->>BFF: session + user
+  BFF->>Config: read beta_enrollment_ends_at
   BFF->>DB: upsert profile + entitlement
   BFF-->>Web: Set-Cookie + ok
 
@@ -126,6 +131,7 @@ sequenceDiagram
   BFF->>Auth: resolve session
   BFF->>DB: select profile by user_id
   alt profile missing
+    BFF->>Config: read beta_enrollment_ends_at
     BFF->>DB: upsert default entitlement
   end
   BFF-->>Web: account + entitlement JSON
@@ -138,8 +144,8 @@ stateDiagram-v2
   [*] --> Anonymous
   Anonymous --> Authenticated: otp_verify_ok
   Authenticated --> HasProfile: profile_upserted
-  HasProfile --> ProBeta: beta_open_and_new_user
-  HasProfile --> FreePlan: beta_closed_or_legacy_free
+  HasProfile --> ProBeta: beta_open_at_register
+  HasProfile --> FreePlan: beta_closed_or_ineligible
   ProBeta --> FreePlan: admin_downgrade_future
   ProBeta --> ProBeta: read_account_idempotent
   Authenticated --> Anonymous: logout
@@ -167,7 +173,15 @@ stateDiagram-v2
 
 **RLS**：启用；`SELECT/UPDATE` 仅 `auth.uid() = user_id`；**INSERT** 建议仅 service role（BFF 使用 `SUPABASE_SECRET_KEY`）执行，避免客户端伪造 `pro_beta`。
 
-**公测开关**：`lib/site-config.ts` 或环境变量 `BETA_ENROLLMENT_OPEN=true`（默认 true），BFF 授予逻辑读取。
+**表 `public.app_config`**（键值型运行时配置）
+
+| 列 | 类型 | 说明 |
+|----|------|------|
+| `key` | `text` PK | 如 `beta_enrollment_ends_at` |
+| `value` | `jsonb` | ISO 8601 时间戳字符串 |
+| `updated_at` | `timestamptz` | 最后更新 |
+
+**RLS**：启用且无 policy；BFF 用 service role 读取。migration seed 示例：`beta_enrollment_ends_at` = `"2026-12-31T23:59:59Z"`。运维在 Supabase SQL 更新即可收官，**无需**发版。
 
 ### 4.2 Web BFF API（新增）
 
@@ -193,7 +207,7 @@ stateDiagram-v2
 }
 ```
 
-**行为**：若 profile 不存在则幂等创建；公测开启且为新用户则 `plan = pro_beta`。
+**行为**：profile 已存在则只读；不存在则幂等创建，读取 `app_config.beta_enrollment_ends_at` 以当前时刻判定 `pro_beta` 或 `free`（**不**查 `auth.users.created_at`）。
 
 #### 与现有 `/api/web/auth/me` 的关系
 
@@ -214,8 +228,10 @@ stateDiagram-v2
 | `app/(marketing)/_components/home/pricing-section.tsx` | 已登录 Pro CTA → `/account` |
 | `app/(marketing)/_config/marketing-content.ts` | 权益相关文案、`planLabel` 映射 |
 | `lib/account/ensure-profile.ts` | 幂等创建与公测授予逻辑 |
+| `lib/account/beta-enrollment.ts` | 公测开放判定纯函数 |
 | `lib/account/entitlement.ts` | plan → 展示文案 |
 | `supabase/migrations/*_user_profiles.sql` | DDL + RLS |
+| `supabase/migrations/*_app_config.sql` | `app_config` 表 + seed |
 | `docs/api/web-auth-account.md` | 契约文档（新建） |
 | `app/sitemap.ts` | **不**收录 `/account`（私有页） |
 
@@ -237,11 +253,7 @@ stateDiagram-v2
 
 ### 剧本 D：公测收官
 
-运维将 `BETA_ENROLLMENT_OPEN=false`，新注册用户 verify 后 profile 为 `free`；昨日已 `pro_beta` 用户仍为 `pro_beta`，账号页文案不变。
-
-### 剧本 E：老用户补登
-
-登录 PRD 已上线前注册的用户（仅有 `auth.users` 无 profile）：首次访问 `/account` 时 BFF 补建 profile；若公测仍开放且 `created_at` 在公测期内，授予 `pro_beta`（规则可在实现时按 `auth.users.created_at` 判定）。
+运维在 Supabase 将 `app_config.beta_enrollment_ends_at` 设为已过去日期，新注册用户 verify 后 profile 为 `free`；昨日已 `pro_beta` 用户仍为 `pro_beta`，账号页文案不变。
 
 ---
 
@@ -254,7 +266,7 @@ stateDiagram-v2
 | 扩展绑定 | **已拍板** | MVP 仅文案占位 |
 | profile 创建时机 | **已拍板** | verify + GET account 双路径幂等 |
 | API 拆分 | **已拍板** | 新增 `GET /api/web/account`，不扩 `/me` |
-| 老用户追溯授予 | **待确认** | 默认：公测期内 `auth.users.created_at` 用户首次访问 account 时补授 `pro_beta` |
+| 老用户追溯授予 | **不做** | 线上无老用户；仅在首次 profile insert（verify）时授予 |
 | 账号注销 | **待确认** | MVP 不做；隐私政策是否补充「注销申请方式」 |
 | 法务审阅 | **待确认** | 「公测 Pro 体验中」与定价「终身享受优先升级」措辞需产品/法务对齐 |
 
@@ -268,19 +280,22 @@ stateDiagram-v2
 
 ### 开发 Backlog（可直接导入 Issue）
 
-- [ ] **FEAT-00001-01-DB**: [数据库] `user_profiles` 表与 RLS migration
-  - **As a** 平台工程 **I want to** 在 Supabase 中持久化用户方案与权益 **So that** 账号中心与后续订阅可复用同一事实源。
+- [ ] **FEAT-00001-01-DB**: [数据库] `user_profiles` + `app_config` 表与 RLS migration
+  - **As a** 平台工程 **I want to** 在 Supabase 中持久化用户方案、权益与公测配置 **So that** 账号中心与运营收官可复用同一事实源。
   - **AC (验收标准)**:
     - **Given** 空数据库且 migration 已应用
     - **When** 执行 `supabase db push` 或等效迁移
-    - **Then** 存在 `public.user_profiles` 表、主键 `user_id`、RLS 启用且 anon 用户无法任意读写他人行
+    - **Then** 存在 `public.user_profiles`、`public.app_config`（含 `beta_enrollment_ends_at` seed）、RLS 启用且 anon 无法任意读写他人行
 
 - [ ] **FEAT-00001-02-BFF**: [BFF] 幂等 profile 创建与公测授予逻辑
-  - **As a** 官网后端 **I want to** 在 verify 与 account 读取时幂等 upsert 用户权益 **So that** 用户登录后始终有可展示的权益快照。
+  - **As a** 官网后端 **I want to** 在 verify 首次创建 profile 时按 `app_config` 日期授予权益 **So that** 新用户登录后有可展示的权益快照。
   - **AC**:
-    - **Given** 公测开关开启且用户首次 OTP 验证成功
-    - **When** BFF 处理 verify 或 GET account
+    - **Given** `beta_enrollment_ends_at` 未配置或为未来日期，且用户首次 OTP 验证成功
+    - **When** BFF 处理 verify
     - **Then** `user_profiles.plan = pro_beta` 且 `entitlement_status = active`，重复调用不产生重复行
+    - **Given** `beta_enrollment_ends_at` 为已过去日期
+    - **When** 新用户首次 verify
+    - **Then** `plan = free`
 
 - [ ] **FEAT-00001-03-API**: [BFF] `GET /api/web/account` 端点
   - **As a** 官网前端 **I want to** 通过 BFF 获取账号与权益 JSON **So that** 不暴露 Supabase 密钥且字段稳定。
@@ -335,7 +350,7 @@ stateDiagram-v2
   - **AC**:
     - **Given** mock Supabase 或纯函数层
     - **When** 连续两次 `ensureProfile`
-    - **Then** 仅一条 profile；公测关闭时新用户为 `free`
+    - **Then** 仅一条 profile；`ends_at` 未来 → `pro_beta`、过去 → `free`、未配置 → `pro_beta`
 
 - [ ] **FEAT-00001-10-SEO**: [合规] 隐私政策账号数据条款复核
   - **As a** 合规 **I want to** 隐私政策说明账号页收集/展示的字段 **So that** 与 [`privacy/_content.ts`](../../app/(marketing)/privacy/_content.ts) 已有「账号化能力」表述一致。
@@ -348,8 +363,8 @@ stateDiagram-v2
 
 | Release | 交付物 | 可验收结果 |
 |---------|--------|------------|
-| **R0 MVP** | migration、`ensure-profile`、`GET /account`、`/account` 页、Header/定价联动 | 新用户登录后可见 `pro_beta`；未登录不可访问 account |
-| **R1** | 契约文档、单测、公测开关 env、老用户补授策略、错误态 UI | `pnpm test` 通过；文档与实现对齐 |
+| **R0 MVP** | migration（`user_profiles` + `app_config`）、`ensure-profile`、`GET /account`、`/account` 页、Header/定价联动 | 新用户登录后可见 `pro_beta`；未登录不可访问 account |
+| **R1** | 契约文档、单测、503 错误态 UI、隐私复核 | `pnpm test` 通过；文档与实现对齐 |
 | **R2（范围外）** | 扩展绑定、付费订阅、运营后台改权益 | 另开 Feature / PRD |
 
 ---
@@ -359,17 +374,17 @@ stateDiagram-v2
 ### 假设
 
 - 继续共用 [`prd-00001-phone-otp-auth`](../prds/prd-00001-phone-otp-auth.md) 的 Supabase 项目与 BFF Cookie 会话。
-- BFF 使用 `SUPABASE_SECRET_KEY` 写 profile；前端仍无 `NEXT_PUBLIC_SUPABASE_*`。
-- 公测期默认开启，直至运维显式关闭 `BETA_ENROLLMENT_OPEN`。
+- BFF 使用 `SUPABASE_SECRET_KEY` 写 profile、读 `app_config`；前端仍无 `NEXT_PUBLIC_SUPABASE_*`。
+- 公测结束日存于 `app_config`；运维在 Supabase 更新日期即可，无需 Vercel 发版。
 
 ### 开放项
 
 | # | 项 | 建议 |
 |---|-----|------|
-| 1 | 老用户补授 `pro_beta` 的时间边界 | 以 `auth.users.created_at` 与公测结束日配置为准 |
-| 2 | 「终身享受优先升级」与「公测体验」文案 | 产品+法务统一口径后更新 `marketing-content` |
-| 3 | `/account` 是否展示「扩展绑定即将支持」插图 | UI 稿确认 |
-| 4 | 登录成功默认跳转 | 维持 `next` 参数；定价 CTA 显式带 `next=/account` |
+| 1 | 「终身享受优先升级」与「公测体验」文案 | 产品+法务统一口径后更新 `marketing-content` |
+| 2 | `/account` 是否展示「扩展绑定即将支持」插图 | UI 稿确认 |
+| 3 | 登录成功默认跳转 | 维持 `next` 参数；定价 CTA 显式带 `next=/account` |
+| 4 | `app_config` 读取缓存 | 可选 R1：短 TTL 内存缓存，非 R0 必须 |
 | 5 | 后续正式 PRD | 已产出 [`prd-00002-web-account-center-beta-entitlement`](../prds/prd-00002-web-account-center-beta-entitlement.md) |
 
 ### 冲突与决议需求
@@ -385,3 +400,4 @@ stateDiagram-v2
 |------|------|
 | 2026-06-22 | 初稿：官网账号中心 + 公测 `pro_beta` 权益；承接登录 PRD R2；含 Backlog FEAT-00001-01～10 |
 | 2026-06-22 | 升格为正式 PRD [`prd-00002-web-account-center-beta-entitlement`](../prds/prd-00002-web-account-center-beta-entitlement.md) |
+| 2026-06-22 | 同步 PRD 修订：公测改 `app_config.beta_enrollment_ends_at`；移除老用户补授 |

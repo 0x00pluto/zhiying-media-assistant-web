@@ -5,4 +5,4 @@
 | 目录 | 用途 |
 |------|------|
 | `api/` | Web BFF API 契约（Markdown） |
-| `openapi/` | OpenAPI 3.0 JSON（dev 专用 `/api/openapi.json` 数据源） |
+| `openapi/` | OpenAPI 3.0 JSON（**由 Zod 生成**，`pnpm openapi:emit`；dev 亦可通过 `/api/openapi.json` 实时获取） |

@@ -94,9 +94,20 @@ export function AuthStatus({
     return (
       <div className="flex flex-col gap-3 rounded-lg border border-border bg-muted/30 p-3">
         <p className="text-sm leading-relaxed">
-          <span className="font-medium text-foreground">{me.phoneMasked}</span>
+          <Link
+            href="/account"
+            onClick={onNavigate}
+            className="font-medium text-foreground underline-offset-4 hover:underline"
+          >
+            {me.phoneMasked}
+          </Link>
           <span className="text-muted-foreground">，欢迎回来</span>
         </p>
+        <Button asChild variant="outline" className="w-full">
+          <Link href="/account" onClick={onNavigate}>
+            账号中心
+          </Link>
+        </Button>
         <Button
           variant="outline"
           className="w-full"
@@ -112,7 +123,12 @@ export function AuthStatus({
   return (
     <div className="hidden items-center gap-3 sm:flex">
       <p className="text-sm whitespace-nowrap">
-        <span className="font-medium text-foreground">{me.phoneMasked}</span>
+        <Link
+          href="/account"
+          className="font-medium text-foreground underline-offset-4 hover:underline"
+        >
+          {me.phoneMasked}
+        </Link>
         <span className="text-muted-foreground">，欢迎回来</span>
       </p>
       <Button
