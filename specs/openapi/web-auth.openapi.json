@@ -1,0 +1,392 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "智赢媒体助手 Web Auth API",
+    "description": "官网前端 BFF 认证接口。登录成功后由 BFF 写入 HttpOnly Cookie（`qm_access_token`、`qm_refresh_token`），SameSite=Lax，生产环境 Secure。",
+    "version": "0.1.0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000",
+      "description": "本地开发"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Web Auth",
+      "description": "手机号 OTP 登录与会话管理"
+    }
+  ],
+  "paths": {
+    "/api/web/auth/sign-in/phone": {
+      "post": {
+        "tags": ["Web Auth"],
+        "summary": "发送短信验证码",
+        "description": "触发 Supabase signInWithOtp，经 Send SMS Hook 发送 6 位短信验证码。同号 BFF 层 30s 内重复请求返回 429。",
+        "operationId": "signInPhone",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SignInPhoneRequest"
+              },
+              "example": {
+                "phone": "13812345678"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "验证码已发送",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthOk"
+                },
+                "example": {
+                  "ok": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求非法或手机号格式错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthError"
+                },
+                "examples": {
+                  "invalidPhone": {
+                    "value": {
+                      "ok": false,
+                      "code": "INVALID_PHONE",
+                      "error": "请输入有效的中国大陆手机号"
+                    }
+                  },
+                  "invalidRequest": {
+                    "value": {
+                      "ok": false,
+                      "code": "INVALID_REQUEST",
+                      "error": "请求格式不正确"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "发码过于频繁",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthError"
+                },
+                "example": {
+                  "ok": false,
+                  "code": "RATE_LIMITED",
+                  "error": "请 30 秒后再试",
+                  "retryAfter": 30
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "服务异常",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthError"
+                },
+                "example": {
+                  "ok": false,
+                  "code": "SERVER_ERROR",
+                  "error": "发送验证码失败，请稍后重试"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/web/auth/sign-in/phone/verify": {
+      "post": {
+        "tags": ["Web Auth"],
+        "summary": "校验 OTP 并登录",
+        "description": "校验 6 位 OTP 并建立官网会话。成功响应头含 Set-Cookie（access + refresh token）。",
+        "operationId": "verifyPhoneOtp",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VerifyOtpRequest"
+              },
+              "example": {
+                "phone": "13812345678",
+                "token": "123456"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "登录成功，响应头含 Set-Cookie",
+            "headers": {
+              "Set-Cookie": {
+                "description": "qm_access_token 与 qm_refresh_token",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthOk"
+                },
+                "example": {
+                  "ok": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求非法、手机号错误或验证码无效",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthError"
+                },
+                "examples": {
+                  "invalidOtp": {
+                    "value": {
+                      "ok": false,
+                      "code": "INVALID_OTP",
+                      "error": "验证码错误或已过期"
+                    }
+                  },
+                  "invalidPhone": {
+                    "value": {
+                      "ok": false,
+                      "code": "INVALID_PHONE",
+                      "error": "请输入有效的中国大陆手机号"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "服务异常",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthError"
+                },
+                "example": {
+                  "ok": false,
+                  "code": "SERVER_ERROR",
+                  "error": "登录失败，请稍后重试"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/web/auth/me": {
+      "get": {
+        "tags": ["Web Auth"],
+        "summary": "读取当前登录态",
+        "description": "携带官网会话 Cookie。服务端会在 access token 即将过期时自动 refreshSession 并回写 Cookie；刷新失败时清除 Cookie 并返回 loggedIn: false。",
+        "operationId": "getMe",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "当前登录态",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/MeLoggedOut"
+                    },
+                    {
+                      "$ref": "#/components/schemas/MeLoggedIn"
+                    }
+                  ]
+                },
+                "examples": {
+                  "loggedOut": {
+                    "value": {
+                      "loggedIn": false
+                    }
+                  },
+                  "loggedIn": {
+                    "value": {
+                      "loggedIn": true,
+                      "userId": "550e8400-e29b-41d4-a716-446655440000",
+                      "phoneMasked": "138****5678"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/web/auth/logout": {
+      "post": {
+        "tags": ["Web Auth"],
+        "summary": "退出登录",
+        "description": "清除官网会话 Cookie；best-effort 调用 Supabase signOut。",
+        "operationId": "logout",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "已退出",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthOk"
+                },
+                "example": {
+                  "ok": true
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "sessionCookie": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "qm_access_token",
+        "description": "官网 HttpOnly 会话 Cookie（qm_access_token、qm_refresh_token）"
+      }
+    },
+    "schemas": {
+      "AuthOk": {
+        "type": "object",
+        "required": ["ok"],
+        "properties": {
+          "ok": {
+            "type": "boolean",
+            "enum": [true]
+          }
+        },
+        "additionalProperties": false
+      },
+      "AuthError": {
+        "type": "object",
+        "required": ["ok", "code", "error"],
+        "properties": {
+          "ok": {
+            "type": "boolean",
+            "enum": [false]
+          },
+          "code": {
+            "$ref": "#/components/schemas/AuthErrorCode"
+          },
+          "error": {
+            "type": "string"
+          },
+          "retryAfter": {
+            "type": "integer",
+            "description": "RATE_LIMITED 时剩余等待秒数"
+          }
+        },
+        "additionalProperties": false
+      },
+      "AuthErrorCode": {
+        "type": "string",
+        "enum": [
+          "INVALID_PHONE",
+          "INVALID_OTP",
+          "INVALID_REQUEST",
+          "RATE_LIMITED",
+          "SERVER_ERROR"
+        ]
+      },
+      "SignInPhoneRequest": {
+        "type": "object",
+        "required": ["phone"],
+        "properties": {
+          "phone": {
+            "type": "string",
+            "description": "11 位中国大陆手机号（不含 +86）",
+            "pattern": "^1[3-9]\\d{9}$",
+            "example": "13812345678"
+          }
+        },
+        "additionalProperties": false
+      },
+      "VerifyOtpRequest": {
+        "type": "object",
+        "required": ["phone", "token"],
+        "properties": {
+          "phone": {
+            "type": "string",
+            "description": "11 位中国大陆手机号（不含 +86）",
+            "pattern": "^1[3-9]\\d{9}$",
+            "example": "13812345678"
+          },
+          "token": {
+            "type": "string",
+            "description": "6 位短信验证码",
+            "pattern": "^\\d{6}$",
+            "example": "123456"
+          }
+        },
+        "additionalProperties": false
+      },
+      "MeLoggedOut": {
+        "type": "object",
+        "required": ["loggedIn"],
+        "properties": {
+          "loggedIn": {
+            "type": "boolean",
+            "enum": [false]
+          }
+        },
+        "additionalProperties": false
+      },
+      "MeLoggedIn": {
+        "type": "object",
+        "required": ["loggedIn", "userId", "phoneMasked"],
+        "properties": {
+          "loggedIn": {
+            "type": "boolean",
+            "enum": [true]
+          },
+          "userId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "phoneMasked": {
+            "type": "string",
+            "description": "脱敏手机号，如 138****5678",
+            "example": "138****5678"
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  }
+}
